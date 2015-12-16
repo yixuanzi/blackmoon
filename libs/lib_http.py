@@ -5,6 +5,7 @@ import StringIO
 import urllib2
 import lib_TheardPool2
 import shutil
+import gzip
 
 
 
@@ -50,7 +51,7 @@ def downdata4info(downinfo,fhand,num,theadvars):
     print "====================="
     '''
     
-def getdata4info(url,opts={},objc=None,objs=None,objh=None):
+def getdata4info(url,opts={},objc=None,objs=None,objh=None,timeout=3):
     if not objc:
         objc=pycurl.Curl()
         objc.setopt(objc.SSL_VERIFYPEER, 0)     # https
@@ -59,7 +60,8 @@ def getdata4info(url,opts={},objc=None,objs=None,objh=None):
         objs=StringIO.StringIO()
     if not objh:
         objh=StringIO.StringIO()
-    objc.setopt(pycurl.URL,url)  
+    objc.setopt(pycurl.URL,url)
+    objc.setopt(pycurl.TIMEOUT,timeout)
     objc.setopt(pycurl.WRITEFUNCTION, objs.write)
     objc.setopt(pycurl.HEADERFUNCTION,objh.write)  
     for key,value in opts.iteritems():
@@ -125,6 +127,9 @@ def parsehttphead(head):
             hdt[key.lower()]=value
     return hdt
 
-
-
+def gethttpresponse(hhead,hbody):
+    if hhead.has_key('accept-encoding') and hhead.has_key('accept-encoding').find('gzip')>=0:
+        return gzip.GzipFile(fileobj=StringIO.StringIO(hbody)).read()
+    else:
+        return hbody
     
