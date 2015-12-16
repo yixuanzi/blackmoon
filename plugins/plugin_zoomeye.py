@@ -1,15 +1,25 @@
-#https://www.zoomeye.org/help/manual
-import lib_http
+
 import pycurl
 import sys
 import urllib2
 import gzip
 import StringIO
 from bs4 import *
+from bmplugin import *
 
+info={'desc':"get ip list object use www.zoomeye.org for search keys",
+      'cve':'',
+      'init':0,  #0 maual init 1 init on start the program
+      'link':"https://www.zoomeye.org/help/manual"} 
+
+def init_plugin(main):
+    #zoom=zoomeye()
+    #return "zoomeye",zoom
+    pass
 
 class zoomeye:
-    def __init__(self):
+    
+    def __init__(self,debugable=0,proxy=None):
         self.helplink="https://www.zoomeye.org/help/manual"
         self.zoomc=zoomeye=pycurl.Curl()
         self.zoomc.setopt(pycurl.SSL_VERIFYPEER, 0)     # https
@@ -22,8 +32,9 @@ class zoomeye:
                                  "Connection: keep-alive"]\
               }
         for key,value in opts.iteritems():
-            self.zoomc.setopt(key,value)  
-        self.zoomc.setopt(pycurl.PROXY,"http://127.0.0.1:8088")
+            self.zoomc.setopt(key,value)
+        if proxy:
+            self.zoomc.setopt(pycurl.PROXY,proxy)
         self.initzoomeye()
         
     def getzoomtoken(self):
