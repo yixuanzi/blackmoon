@@ -19,9 +19,9 @@ class interactive:
             self.__gvars[key]=value
             return 1
     
-    def getcommandlist(self):
-        return self.__cmd.keys()
-    
+    def getcmddict(self):
+        return self.__cmd
+ 
     def getgvars(self,key):
         if self.__gvars.has_key(key):
             return self.__gvars[key]
@@ -29,33 +29,50 @@ class interactive:
         else:
             return None
         
-    def regcommand(self,cmd,func):
+    def regcommand(self,cmd,func,msg="No help msg",group='plugins'):
         if cmd and func:
-            if not self.__cmd.has_key(cmd):
-                self.__cmd[cmd]=func
+            if self.__cmd.has_key(group):
+                if self.__cmd[group].has_key(cmd):
+                    lib_func.printstr("You can't reg exist command",2)
+                    return -1
+                else:
+                    self.__cmd[group][cmd]=(func,msg)
             else:
-                print "Error: you can't reg exist command"
-            return 1
+                self.__cmd[group]=dict()
+                self.__cmd[group][cmd]=(func,msg)
+
+        return 0
         
     def defaultprefix(self):
-        return "BlackMoon/Maintive:>"
+        return "$BlackMoon$Maintive>"
     
-        
+
+    def getfunction(self,name,groups=('buildins','plugins'),tp=0):
+        """0 function\t 1 desc message\t 2 help message"""
+        for group in groups:
+            if self.__cmd.has_key(group) and self.__cmd[group].has_key(name):
+                if tp in (0,1):
+                    return self.__cmd[group][name][tp]
+                else:
+                    return self.__cmd[group][name][0].__doc__
+        return "Not exist command"
+                
     def start(self):
         print self.welcome
         while 1:
             cmds=raw_input(self.prefix())
-            cmds=cmds.split(' ',1)
+            cmds=cmds.strip().split(' ',1)
             if cmds[0] in ('exit','quit'):
                 break
-            if len(cmds)>1 and self.__cmd.has_key(cmds[0]):
-                self.__cmd[cmds[0]](cmds[1])
-            elif len(cmds)==1 and self.__cmd.has_key(cmds[0]):
-                self.__cmd[cmds[0]](None)
+            func=self.getfunction(cmds[0])
+            if len(cmds)>1 and type(func)!=str:
+                func(cmds[1].strip())
+            elif len(cmds)==1 and type(func)!=str:
+                func("")
             else:
-                print "Error command!!!"
+                lib_func.printstr("Not exist command in default groups!!!",2)
     
-        print "Interactive is finish"
+        lib_func.printstr("Interactive is finish")
 
 #i=interactive()
 #i.start()

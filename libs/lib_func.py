@@ -18,7 +18,11 @@ def getMD5(fname):
         return md5s
     
 def printstr(s,flag=0):
+    
     fd={0:'INFO:',1:"WARING:",2:"ERROR:"}
+    if type(flag)==str:
+        print flag,s
+        return
     print fd[flag],s
     
 def printlist(ablist,flag=0):
@@ -37,9 +41,20 @@ def getparasdict(matparas,formats,formatm=[]):
         pd={}
         for item in opts:
             pd[mystrip(item[0])]=item[1]
+        if args and args[0]:
+            pd['args']=args
         return pd
     except Exception:
         lib_func.printstr("parameter string is error for you formats",2)
         
 def mystrip(s,c='-'):
     return s.replace(c,"")
+
+def getrandomstr(i=4):
+    import random
+    cc='abcdefghijklmnopqrstuvwxzy'
+    s=''
+    for i in range(i):
+        s+=cc[random.randint(0,25)]
+    return s
+    
