@@ -13,19 +13,23 @@ info={'desc':"get ip list object use www.zoomeye.org for search keys",
       'link':"https://www.zoomeye.org/help/manual"} 
 
 def init_plugin(main):
+    zoomeye.main=main
+    active=main.maintive
+    active.regcommand('zoomse',zoom_search_print)
     #zoom=zoomeye()
     #return "zoomeye",zoom
-    pass
 
 class zoomeye:
-    
+    main=None
     def __init__(self,debugable=0,proxy=None):
         self.helplink="https://www.zoomeye.org/help/manual"
-        self.zoomc=zoomeye=pycurl.Curl()
-        self.zoomc.setopt(pycurl.SSL_VERIFYPEER, 0)     # https
+        self.useragent=self.main.pcf.getconfig('zoomeye','useragent')
+        self.zoomc=pycurl.Curl()
+        self.cookie=self.main.pcf.getconfig('zoomeye','cookie')
+        self.zoomc.setopt(pycurl.SSL_VERIFYPEER, 0)     #https
         self.zoomc.setopt(pycurl.SSL_VERIFYHOST, 0)
-        opts={pycurl.USERAGENT:"Mozilla/5.0 (Windows NT 10.0; WOW64; rv:42.0) Gecko/20100101 Firefox/42.0",\
-              pycurl.COOKIE:"Hm_lvt_e58da53564b1ec3fb2539178e6db042e=1449477404,1449796789,1450150933; csrftoken=Tt2v0u4KEdcawjRAJw6ZKn94nM4bpWMd; sessionid=osdpz6v4fk6cxgr6813mxnxr6lnikv14; __jsluid=18350d75c69ee18b1ab16c96da836eb9; Hm_lpvt_e58da53564b1ec3fb2539178e6db042e=1450158229; __jsl_clearance=1450161556.988|0|SMRt%2FXvdqf7fxCeD6xZpY8RP3T4%3D",\
+        opts={pycurl.USERAGENT:self.useragent,\
+              pycurl.COOKIE:self.cookie,\
               pycurl.HTTPHEADER:["Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",\
                                  "Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3",\
                                  "Accept-Encoding: gzip, deflate",\
@@ -41,12 +45,18 @@ class zoomeye:
         useragent=raw_input("please input the User-Agent:")
         if useragent:
             self.zoomc.setopt(pycurl.USERAGENT,useragent)
+            self.useragent=useragent
         cookie=raw_input("please input the zoom cookie token:")
         if cookie:
             self.zoomc.setopt(pycurl.COOKIE,cookie)
+            self.cookie=cookie
     
     def isvaildzoom(self):
-        head,body=lib_http.getdata4info("https://www.zoomeye.org",objc=self.zoomc)
+        try:
+            head,body=lib_http.getdata4info("https://www.zoomeye.org",objc=self.zoomc)
+        except Exception:
+            lib_func.printstr("Time Out",1)
+            return 0
         #print head
         hdt=lib_http.parsehttphead(head)
         if hdt['code']=='521':
@@ -54,11 +64,16 @@ class zoomeye:
         return 1
         
     def initzoomeye(self):
+        flag=0
         while 1:
             if not self.isvaildzoom():
                 self.getzoomtoken()
+                flag=1
             else:
                 break
+        if flag:
+            self.main.pcf.setconfig('zoomeye','useragent',self.useragent)
+            self.main.pcf.setconfig('zoomeye','cookie',self.cookie)
             
     def zoomsearch(self,sstr,limit=20):
         sstr=urllib2.quote(sstr)
@@ -122,6 +137,13 @@ class zoomeye:
                 print key,value
             print  '============'
 
+
+def zoom_search_print(paras):
+    zoom=zoomeye()
+    if not paras:
+        paras="site:baidu.com"
+    devs=zoom.zoomsearch(paras)
+    zoom.printdevinfo(devs)
 #zoom=zoomeye()
 #devs=zoom.zoomsearch("esgcc.com.cn")
 #zoom.printdevinfo(devs)

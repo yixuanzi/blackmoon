@@ -4,6 +4,8 @@ import hashlib
 import os
 import subprocess
 import sys
+import getopt
+import lib_func
 
 def execShell(cmd):
     p=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -25,4 +27,19 @@ def printlist(ablist,flag=0):
             print i
         else:
             print i,
-    print ''
+    if not flag:
+        print ''
+    
+def getparasdict(matparas,formats,formatm=[]):
+    plist=matparas.split(' ')
+    try:
+        opts,args=getopt.getopt(plist,formats,formatm)
+        pd={}
+        for item in opts:
+            pd[mystrip(item[0])]=item[1]
+        return pd
+    except Exception:
+        lib_func.printstr("parameter string is error for you formats",2)
+        
+def mystrip(s,c='-'):
+    return s.replace(c,"")

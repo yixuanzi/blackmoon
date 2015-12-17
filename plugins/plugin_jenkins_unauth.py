@@ -23,9 +23,6 @@ def init_plugin(main):
     #return "jenkins_unauth",jenkins
 
 class jenkins_unauth:
-    info={'desc':"jenkins unauth vulns,we can remote execution thearbitrarily command as the app privilege",
-          'cve':'',
-          'init':0} #0 maual init 1 init on start the program 
     def __init__(self,address=None):
         self.address=""
         self.initaddr=""

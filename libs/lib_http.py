@@ -128,7 +128,7 @@ def parsehttphead(head):
     return hdt
 
 def gethttpresponse(hhead,hbody):
-    if hhead.has_key('accept-encoding') and hhead.has_key('accept-encoding').find('gzip')>=0:
+    if hhead.has_key('content-encoding') and hhead['content-encoding'].find('gzip')>=0:
         return gzip.GzipFile(fileobj=StringIO.StringIO(hbody)).read()
     else:
         return hbody
