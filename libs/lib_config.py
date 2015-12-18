@@ -26,6 +26,6 @@ class bmconfig:
         
     def __del__(self):
         if self.change:
-            self.cf.write(open(path,'w'))
+            self.cf.write(open(self.path,'w'))
     
     
