@@ -16,3 +16,8 @@ def init_plugin(main):
     #jenkins=jenkins_unauth()
     active=main.maintive
     active.regcommand('sxrecbrute',sxrecharge_brute,"shu xiang recharge brute")
+    
+    
+def sxrecharge_brute(paras):
+    """sxrecbrute [-l lenght_brute] [-q]"""
+    pass

@@ -7,9 +7,10 @@ class main_command:
     """blackMoon main class"""
     def __init__(self):
         self.maintive=lib_interactive.interactive()
+        self.maintive.setdefaultgroups(PLUGINS_GROUPS)
         self.gdict={'plugins':{},'objects':{}}
         self.maintive.share=self.gdict
-        self.pcf=lib_config.bmconfig(os.getcwd()+'/plugins/plugins.ini')
+        self.pcf=lib_config.bmconfig(CONFIG_PATH)
         funcdict={'plugins':self.plugins,\
                   'search':self.search,\
                   'varobj':self.listobj,\
@@ -17,7 +18,7 @@ class main_command:
                   'help':self.bmhelp}
         
         for cmd,func in funcdict.iteritems():
-            self.maintive.regcommand(cmd,func,func.__doc__,'buildins')
+            self.maintive.regcommand(cmd,func,func.__doc__)
             
     def plugins(self,paras=None):
         """list loaded plugins"""
@@ -47,7 +48,8 @@ class main_command:
                         lib_func.printstr("%s\t%s" %(name,cmdmsg[1]),'*')
                 return
             if pd.has_key('args') and len(pd['args'])==1:
-                lib_func.printstr(self.maintive.getfunction(pd['args'][0],tp=2),'HelpMSG:')
+                lib_func.printstr(self.maintive.getfunction(pd['args'][0],tp=2),'SRCFILE:')
+                lib_func.printstr(self.maintive.getfunction(pd['args'][0],tp=3),'HelpMSG:')
         except Exception:
             lib_func.printstr("You parameter vaild",2)
            

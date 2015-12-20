@@ -17,8 +17,8 @@ zoom=None
 def init_plugin(main):
     zoomeye.main=main
     active=main.maintive
-    active.regcommand('zoomprint',zoom_search_print,"search result to print use zoomeye")
-    active.regcommand('zoomeye',zoom_search_obj,"search result to object use zoomeye")
+    active.regcommand('zoomprint',zoom_search_print,"search result to print use zoomeye",__file__)
+    active.regcommand('zoomeye',zoom_search_obj,"search result to object use zoomeye",__file__)
 
 class zoomeye:
     main=None
@@ -76,25 +76,34 @@ class zoomeye:
             self.main.pcf.setconfig('zoomeye','useragent',self.useragent)
             self.main.pcf.setconfig('zoomeye','cookie',self.cookie)
             
-    def zoomsearch(self,sstr,limit=10):
+    def zoomsearch(self,sstr,limit=10,target='host'):
         sstr=urllib2.quote(sstr)
-        surl="https://www.zoomeye.org/search?q="+sstr
+        surl="https://www.zoomeye.org/search?q=%s&h=%s" %(sstr,target)
         devices=self.getzoomsrs(surl,limit)
         return devices
     
-    def getzoomsrs(self,surl,limit):
+    def getzoomsrs(self,surl,limit,flag=0):
+        """flag 0 means get one page result then get next one ,1 is not"""
         p=1
         deviceALL=[]
         while 1:
             url="%s&p=%d" %(surl,p)
             body=self.getzoom4url(url)
             zoomdevs=self.parsezoom4body(body)
-            if len(zoomdevs)<10 or ((len(deviceALL)+10)>=limit and limit>0):
+            if flag or len(zoomdevs)<10 or ((len(deviceALL)+10)>=limit and limit>0):
                 deviceALL.extend(zoomdevs)
                 return deviceALL
             deviceALL.extend(zoomdevs)
             p+=1
             
+    def getzoomnumbers(self,url):
+        body=self.getzoom4url(url)
+        soup=BeautifulSoup(body)
+        try:
+            return int(soup.find('div',{'class':'result-summary'}).strong.contents[0].strip())
+        except Exception:
+            return -1
+    
     def getzoom4url(self,url):
         while 1:
             head,body=lib_http.getdata4info(url,{pycurl.URL:url},self.zoomc)
@@ -105,6 +114,7 @@ class zoomeye:
                 return lib_http.gethttpresponse(hdt,body)
             
      
+        
     def parsezoom4body(self,body):
         soup=BeautifulSoup(body)
         zoomdevs=[]
@@ -152,10 +162,9 @@ def zoom_search_print(paras):
     zoom.printdevinfo(devs)
     
 def zoom_search_obj(paras):
-    """zoomeye [-o objname] [--max=limit] search_string"""
-    init_zoom()
+    """zoomeye [-o objname] [-t threads] [--max=limit] search_string"""
     try:
-        pd=lib_func.getparasdict(paras,"o:",['max='])
+        pd=lib_func.getparasdict(paras,"o:t:",['max='])
     except Exception:
         lib_func.printstr(zoom_search_obj.__doc__,1)
         return
@@ -164,15 +173,48 @@ def zoom_search_obj(paras):
         return
     key=pd['args'][0]
     mmx=10
+    threads=1
     if pd.has_key('max'):
         mmx=int(pd['max'])
-    devs=zoom.zoomsearch(key,mmx)
+    if pd.has_key('t'):
+        threads=int(pd['t'])
+    devs=zoomsearch(key,mmx,threads)
     if pd.has_key('o'):
         name=pd['o']
     else:
         name='zoom_rs_'+lib_func.getrandomstr()
     zoom.main.regobj(devs,name)
 
+def initsubthread(pool):
+    if type(pool)==lib_TheardPool2.threadpool:
+        for i in range(len(pool.threads)):
+            pool.threads[i].theadvars['zoom']=zoomeye()
+
+def zoomwork(devs,url,lock,threadvar):
+    subdevs=threadvar['zoom'].getzoomsrs(url,0,1)
+    lock.acquire()
+    devs.extend(subdevs)
+    lock.release()
+    
+def zoomsearch(key,limit,threads,target='host'):
+    if threads==1:
+        init_zoom()
+        devs=zoom.zoomsearch(key,limit)
+    else:
+        import math
+        devs=[]
+        sstr=urllib2.quote(key)
+        lock=lib_TheardPool2.getlock()
+        pool=lib_TheardPool2.threadpool(tmax=threads,start=False)
+        pool.initsubthead(initsubthread,())
+        ts=int(math.ceil(limit/10.0))
+        for i in range(ts):
+            surl="https://www.zoomeye.org/search?q=%s&h=%s" %(sstr,target)
+            pool.addtask(zoomwork,(devs,surl,lock))
+        pool.start()
+        pool.waitPoolComplete()
+    return devs
+                        
 #zoom=zoomeye()
 #devs=zoom.zoomsearch("esgcc.com.cn")
 #zoom.printdevinfo(devs)

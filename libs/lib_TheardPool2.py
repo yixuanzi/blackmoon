@@ -4,9 +4,15 @@ import time
 import Queue
 import httplib2
 #=============================================================================
+#create thread pool,set number of thead and others
+#init variable for every subthread of job if you want
+#add task into pool
+#wait all of subthread is over in the pool 
+#!!!at the end of callback function(task function) parameters list is the subthread variable
 
 def getlock():
     return threading.RLock()
+
 
 
 class taskclass(threading.Thread):
@@ -84,14 +90,14 @@ class threadpool(threading.Thread):
                     print "\nThread Pool is empty"
                 break
             
-        self.waitsubcomplete()
+        self.__waitsubcomplete()
         self.stop=True
         
             
     def addtask(self,func,args):
         self.queue.put((func,args))
     
-    def waitsubcomplete(self):
+    def __waitsubcomplete(self):
         if self.debug:
             print "Wait all subthread complete..."
         for thead in self.threads:
