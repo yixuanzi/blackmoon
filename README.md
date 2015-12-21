@@ -1,29 +1,31 @@
 #BLACKMOON
 #author:Gbuyi
 #email: yeying0311@126.com
-#date: 2015-12-21
+
 
 #一个开放式漏洞利用平台，支持动态加载插件
-内置如下交互式命令
-* load	load [-o objname] filename
-* search	search plugin for you key
-* varobj	list objection in the space
-* help	print help msg for you question
-* dump	dump [-o filename] [--space=space] objname
-* clear	clear [-a] [-s space.name] 
-* eval	eval python_segment
-* plugins	list loaded plugins
-* example	this is example plugin
+	内置如下交互式命令
+	* load	load [-o objname] filename
+	* search	search plugin for you key
+	* varobj	list objection in the space
+	* help	print help msg for you question
+	* dump	dump [-o filename] [--space=space] objname
+	* clear	clear [-a] [-s space.name] 
+	* eval	eval python_segment
+	* plugins	list loaded plugins
+	* example	this is example plugin
 
 
 #插件样例
+	根据功能要求加载自身需要模块
 	import pycurl
 	import sys
 	import urllib2
 	import gzip
 	import StringIO
 	from bs4 import *
-
+	
+	必须加载模块，由程序提供
 	from bmplugin import *
 
 	info={'desc':"this is a example for you",
@@ -31,11 +33,13 @@
 		'link':"help link"} 
 
 	def init_plugin(main):
+		'''命令名，命令触发函数，命令功能描述，推荐固定参数__file__'''
 		active.regcommand('example',test_func,"this is example plugin",__file__)
 
 	def test_func(paras):
 		命令帮助文档，通过使用 htlp command 可调出此处帮助文字
 		"""example test_string"""
+		print "you can do everything"
 
 
 	
@@ -365,5 +369,5 @@ CLASSES
      |  __weakref__
      |      list of weak references to the object (if defined)
 
-FUNCTIONS
-    getlock()
+	FUNCTIONS
+		getlock()
