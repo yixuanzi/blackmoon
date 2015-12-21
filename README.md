@@ -15,8 +15,8 @@
 * plugins	list loaded plugins
 * example	this is example plugin
 
-#插件样例如下
 
+#插件样例
 import pycurl
 import sys
 import urllib2
@@ -24,7 +24,6 @@ import gzip
 import StringIO
 from bs4 import *
 
-#this module is must be load
 from bmplugin import *
 
 info={'desc':"this is a example for you",
@@ -33,12 +32,11 @@ info={'desc':"this is a example for you",
 
 def init_plugin(main):
     active=main.maintive
-	#向主交互式接口注册命令
-	#命令名，触发函数对象，函数功能描述，推荐固定参数__file__（可以默认）
+	向主交互式接口注册命令，触发函数对象，函数功能描述，推荐固定参数__file__（可以默认）
     active.regcommand('example',test_func,"this is example plugin",__file__)
 
 def test_func(paras):
-	#命令帮助文档，通过使用 htlp command 可调出此处帮助文字
+	命令帮助文档，通过使用 htlp command 可调出此处帮助文字
     """example test_string"""
     lib_func.printstr("this is a example plugin")
     lib_func.printstr("this is your input for parameter")
@@ -46,6 +44,7 @@ def test_func(paras):
     lib_func.printstr("You can you everything here now!!!")
 
 
+	
 #基础函数库
 lib_config
     class bmconfig
