@@ -10,7 +10,7 @@ PWD_PATH=os.getcwd()
 
 TOOL_PATH=PWD_PATH+'/plugins/tool'
 
-CONFIG_PATH=PWD_PATH+'/plugins/config'
+CONFIG_PATH=PWD_PATH+'/plugins/config/plugins.ini'
 
 PLUGINS_PATH=[PWD_PATH+'/plugins/auxiliary',\
               PWD_PATH+'/plugins/exploit',\

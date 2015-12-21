@@ -5,6 +5,8 @@ import os
 import subprocess
 import sys
 import getopt
+import pickle
+
 import lib_func
 
 def execShell(cmd):
@@ -57,4 +59,31 @@ def getrandomstr(i=4):
     for i in range(i):
         s+=cc[random.randint(0,25)]
     return s
-    
+
+def runjs(js):
+    import PyV8
+    v8=PyV8.JSContext()
+    v8.enter()
+    try:
+        func=v8.eval(js)
+    except Exception:
+        lib_func.printstr("Javascript sytia error",2)
+        return None
+    return func()
+
+def getmin(a,b):
+    if a>b:
+        return b
+    return a
+
+def loadobj(path):
+    try:
+        obj=pickle.load(file(path))
+        return obj
+    except Exception:
+        printstr("load object fail in %s" %path,1)
+        return None
+
+def dumpobj(obj,path):
+    f=open(path,'w')
+    pickle.dump(obj,f)

@@ -28,14 +28,14 @@ class taskclass(threading.Thread):
         
     def run(self):
         while True:
-            try:
+            if not self.queue.empty():
                 if self.stop:
                     break
                 func,args=self.queue.get(timeout=self.waitime)
                 args=list(args)
                 args.append(self.theadvars)
                 func(*args)
-            except Queue.Empty:
+            else:
                 if self.debug:
                     print "\nSubThread task queue is empty"
                 break 
@@ -69,25 +69,28 @@ class threadpool(threading.Thread):
         
 
     def run(self):
+        flag=0
         while True:
-            try:
-                if self.tasks>0 and self.currentasks>=self.tasks:
-                    print "\nspecify task number is complete!!!"
+            if self.tasks>0 and self.currentasks>=self.tasks:
+                print "\nspecify task number is complete!!!"
+                break
+            if self.stop:
+                break
+            for thead in self.threads:
+                if not self.queue.empty():
+                    func_args=self.queue.get(timeout=self.waitime)
+                else:
+                    flag=1
                     break
-                if self.stop:
-                    break
-                func_args=self.queue.get(timeout=self.waitime)
-                for thead in self.threads:
-                    thead.addtask(func_args)
-                    self.currentasks+=1
-                    if self.debug:
-                        print func_args
-                    if not thead.is_alive():
-                        thead.start()
-                
-            except Queue.Empty:
+                thead.addtask(func_args)
+                self.currentasks+=1
                 if self.debug:
-                    print "\nThread Pool is empty"
+                    print func_args
+                if not thead.is_alive():
+                    thead.start()  
+            if flag:
+                if self.debug:
+                    print "\nThreadPool task queue is empty"                
                 break
             
         self.__waitsubcomplete()

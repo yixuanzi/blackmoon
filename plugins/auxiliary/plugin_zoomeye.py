@@ -6,10 +6,11 @@ import gzip
 import StringIO
 from bs4 import *
 from bmplugin import *
+import re
+
 
 info={'desc':"get ip list object use www.zoomeye.org for search keys",
       'cve':'',
-      'help':'zoomeye {search_string}',
       'link':"https://www.zoomeye.org/help/manual"} 
 
 zoom=None
@@ -22,15 +23,15 @@ def init_plugin(main):
 
 class zoomeye:
     main=None
+    zoomtoken={'__jsluid':"",'__jsl_clearance':""}
+    lock=lib_TheardPool2.getlock()
     def __init__(self,debugable=0,proxy=None):
         self.helplink="https://www.zoomeye.org/help/manual"
         self.useragent=self.main.pcf.getconfig('zoomeye','useragent')
         self.zoomc=pycurl.Curl()
-        self.cookie=self.main.pcf.getconfig('zoomeye','cookie')
         self.zoomc.setopt(pycurl.SSL_VERIFYPEER, 0)     #https
         self.zoomc.setopt(pycurl.SSL_VERIFYHOST, 0)
         opts={pycurl.USERAGENT:self.useragent,\
-              pycurl.COOKIE:self.cookie,\
               pycurl.HTTPHEADER:["Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",\
                                  "Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3",\
                                  "Accept-Encoding: gzip, deflate",\
@@ -40,20 +41,36 @@ class zoomeye:
             self.zoomc.setopt(key,value)
         if proxy:
             self.zoomc.setopt(pycurl.PROXY,proxy)
-        self.initzoomeye()
+        #self.initzoomeye()
         
     def getzoomtoken(self):
-        useragent=raw_input("please input the User-Agent:")
-        if useragent:
-            self.zoomc.setopt(pycurl.USERAGENT,useragent)
-            self.useragent=useragent
-        cookie=raw_input("please input the zoom cookie token:")
-        if cookie:
-            self.zoomc.setopt(pycurl.COOKIE,cookie)
-            self.cookie=cookie
-    
+        print "get token"
+        while 1:
+            try:
+                head,body=lib_http.getdata4info("https://www.zoomeye.org",objc=self.zoomc)
+            except Exception:
+                lib_func.printstr("Time Out",1)
+                continue
+            hdt=lib_http.parsehttphead(head)
+            if hdt.has_key('set-cookie'):
+                m=re.search('__jsluid=\w+;',hdt['set-cookie'])
+                if m:
+                    zoomeye.zoomtoken['__jsluid']=m.group()
+            m=re.search(r"<script>(.+(eval\(.+\{\}\)\)\;).+)</script>",body)
+            if m:
+                js=m.groups()[1].replace('eval(','return(',1)
+                js=lib_func.runjs("(function(){%s})" %js)
+                js=js[:js.find('setTimeout')]
+                js=re.sub(r"eval\(.+\{\}\)\)\;",js,m.groups()[0])
+                js=js.replace('document.cookie=dc','return dc')
+                rs=lib_func.runjs("(function(){%s})" %js)
+                zoomeye.zoomtoken['__jsl_clearance']=re.search('__jsl_clearance=.+?;',rs).group()
+            if self.isvaildzoom():
+                break
+        print "token ok"
     def isvaildzoom(self):
         try:
+            self.zoomc.setopt(pycurl.COOKIE,"%s %s" %(self.zoomtoken['__jsluid'],self.zoomtoken['__jsl_clearance']))
             head,body=lib_http.getdata4info("https://www.zoomeye.org",objc=self.zoomc)
         except Exception:
             lib_func.printstr("Time Out",1)
@@ -65,17 +82,11 @@ class zoomeye:
         return 1
         
     def initzoomeye(self):
-        flag=0
-        while 1:
-            if not self.isvaildzoom():
-                self.getzoomtoken()
-                flag=1
-            else:
-                break
-        if flag:
-            self.main.pcf.setconfig('zoomeye','useragent',self.useragent)
-            self.main.pcf.setconfig('zoomeye','cookie',self.cookie)
-            
+        self.lock.acquire()
+        if not self.isvaildzoom():
+            self.getzoomtoken()
+        self.lock.release()
+    
     def zoomsearch(self,sstr,limit=10,target='host'):
         sstr=urllib2.quote(sstr)
         surl="https://www.zoomeye.org/search?q=%s&h=%s" %(sstr,target)
@@ -106,7 +117,11 @@ class zoomeye:
     
     def getzoom4url(self,url):
         while 1:
-            head,body=lib_http.getdata4info(url,{pycurl.URL:url},self.zoomc)
+            try:
+                head,body=lib_http.getdata4info(url,{pycurl.URL:url},self.zoomc)
+            except Exception:
+                lib_func.printstr("Time Out",1)
+                continue
             hdt=lib_http.parsehttphead(head)
             if hdt['code']=='521':
                 self.initzoomeye()
@@ -163,14 +178,15 @@ def zoom_search_print(paras):
     
 def zoom_search_obj(paras):
     """zoomeye [-o objname] [-t threads] [--max=limit] search_string"""
+    init_zoom()
     try:
         pd=lib_func.getparasdict(paras,"o:t:",['max='])
+        if (not pd) or len(pd['args'])!=1:
+            lib_func.printstr("You should input the vaild parameters",1)
+            return
     except Exception:
         lib_func.printstr(zoom_search_obj.__doc__,1)
-        return
-    if (not pd) or len(pd['args'])!=1:
-        lib_func.printstr("You should input the vaild parameters",1)
-        return
+        return    
     key=pd['args'][0]
     mmx=10
     threads=1
@@ -183,7 +199,7 @@ def zoom_search_obj(paras):
         name=pd['o']
     else:
         name='zoom_rs_'+lib_func.getrandomstr()
-    zoom.main.regobj(devs,name)
+    zoom.main.regobj(devs,name,__name__)
 
 def initsubthread(pool):
     if type(pool)==lib_TheardPool2.threadpool:
@@ -198,23 +214,28 @@ def zoomwork(devs,url,lock,threadvar):
     
 def zoomsearch(key,limit,threads,target='host'):
     if threads==1:
-        init_zoom()
         devs=zoom.zoomsearch(key,limit)
     else:
         import math
         devs=[]
         sstr=urllib2.quote(key)
+        nm=zoom.getzoomnumbers("https://www.zoomeye.org/search?q=%s&h=%s" %(sstr,target))
+        if nm<=0:
+            lib_func.printstr("This summary is emtry",1)
+            return
         lock=lib_TheardPool2.getlock()
-        pool=lib_TheardPool2.threadpool(tmax=threads,start=False)
+        pool=lib_TheardPool2.threadpool(tmax=threads,start=False,debug=True)
         pool.initsubthead(initsubthread,())
         ts=int(math.ceil(limit/10.0))
+        total=int(math.ceil(nm/10.0))
+        ts=lib_func.getmin(ts,total)
         for i in range(ts):
-            surl="https://www.zoomeye.org/search?q=%s&h=%s" %(sstr,target)
+            surl="https://www.zoomeye.org/search?q=%s&h=%s&p=%d" %(sstr,target,i+1)
             pool.addtask(zoomwork,(devs,surl,lock))
         pool.start()
         pool.waitPoolComplete()
     return devs
-                        
+
 #zoom=zoomeye()
 #devs=zoom.zoomsearch("esgcc.com.cn")
 #zoom.printdevinfo(devs)

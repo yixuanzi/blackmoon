@@ -57,11 +57,10 @@ class main_command:
     def listobj(self,paras):
         """list objection in the space"""
         for space,dt in self.gdict['objects'].iteritems():
-            print space
-            for key,value in dt:
-                print '\t',key,value
-        pass
-    
+            lib_func.printstr(space,"#####")
+            for key in dt.keys():
+                lib_func.printstr(key,"Object:")
+        
     def clear(self,paras):
         """clear object """
         pass
@@ -80,5 +79,13 @@ class main_command:
             self.gdict['objects'][space]=dict()
             self.gdict['objects'][space][name]=obj
         lib_func.printstr("You reg object %s in %s succfully" %(name,space))
+        
+    def getobj(self,name,space='buildins'):
+        if self.gdict['objects'].has_key(space):
+            if self.gdict['objects'][space].has_key(name):
+                return self.gdict['objects'][space][name]
+        lib_func.printstr("Have not %s in %s" %(name,space),1)
+        return None
+
 
         
