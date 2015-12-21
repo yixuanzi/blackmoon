@@ -51,7 +51,7 @@ def downdata4info(downinfo,fhand,num,theadvars):
     print "====================="
     '''
     
-def getdata4info(url,opts={},objc=None,objs=None,objh=None,timeout=3):
+def getdata4info(url,opts={},objc=None,objs=None,objh=None,timeout=5):
     if not objc:
         objc=pycurl.Curl()
         objc.setopt(objc.SSL_VERIFYPEER, 0)     # https

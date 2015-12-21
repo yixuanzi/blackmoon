@@ -78,12 +78,16 @@ def getmin(a,b):
 
 def loadobj(path):
     try:
-        obj=pickle.load(file(path))
+        obj=pickle.load(file(path,'rb'))
         return obj
     except Exception:
         printstr("load object fail in %s" %path,1)
         return None
 
 def dumpobj(obj,path):
-    f=open(path,'w')
-    pickle.dump(obj,f)
+    try:
+        f=open(path,'wb')
+        pickle.dump(obj,f)
+    except Exception:
+        printstr("dump object to %s fail" %path,2)
+        return None

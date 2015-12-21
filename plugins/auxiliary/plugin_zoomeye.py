@@ -1,4 +1,4 @@
-
+#coding=utf8
 import pycurl
 import sys
 import urllib2
@@ -14,6 +14,7 @@ info={'desc':"get ip list object use www.zoomeye.org for search keys",
       'link':"https://www.zoomeye.org/help/manual"} 
 
 zoom=None
+lock=lib_TheardPool2.getlock()
 
 def init_plugin(main):
     zoomeye.main=main
@@ -21,14 +22,17 @@ def init_plugin(main):
     active.regcommand('zoomprint',zoom_search_print,"search result to print use zoomeye",__file__)
     active.regcommand('zoomeye',zoom_search_obj,"search result to object use zoomeye",__file__)
 
+def getuseragent():
+    return "Mozilla/5.0 (Windows NT 10.1; WOW64; rv:42.0) Gecko/20100101 Firefox/"+lib_func.getrandomstr(4)
+
 class zoomeye:
     main=None
-    zoomtoken={'__jsluid':"",'__jsl_clearance':""}
-    lock=lib_TheardPool2.getlock()
+    zoomtoken={'__jsluid':"",'__jsl_clearance':"",'sessionid':""}
+    useragent=getuseragent()
     def __init__(self,debugable=0,proxy=None):
         self.helplink="https://www.zoomeye.org/help/manual"
-        self.useragent=self.main.pcf.getconfig('zoomeye','useragent')
         self.zoomc=pycurl.Curl()
+        zoomeye.zoomtoken['sessionid']=self.main.pcf.getconfig('zoomeye','token')
         self.zoomc.setopt(pycurl.SSL_VERIFYPEER, 0)     #https
         self.zoomc.setopt(pycurl.SSL_VERIFYHOST, 0)
         opts={pycurl.USERAGENT:self.useragent,\
@@ -44,7 +48,7 @@ class zoomeye:
         #self.initzoomeye()
         
     def getzoomtoken(self):
-        print "get token"
+        lib_func.printstr("Get Zoom token ing...")
         while 1:
             try:
                 head,body=lib_http.getdata4info("https://www.zoomeye.org",objc=self.zoomc)
@@ -66,8 +70,8 @@ class zoomeye:
                 rs=lib_func.runjs("(function(){%s})" %js)
                 zoomeye.zoomtoken['__jsl_clearance']=re.search('__jsl_clearance=.+?;',rs).group()
             if self.isvaildzoom():
+                lib_func.printstr("Get Zoom token OK")
                 break
-        print "token ok"
     def isvaildzoom(self):
         try:
             self.zoomc.setopt(pycurl.COOKIE,"%s %s" %(self.zoomtoken['__jsluid'],self.zoomtoken['__jsl_clearance']))
@@ -82,10 +86,10 @@ class zoomeye:
         return 1
         
     def initzoomeye(self):
-        self.lock.acquire()
+        lock.acquire()
         if not self.isvaildzoom():
             self.getzoomtoken()
-        self.lock.release()
+        lock.release()
     
     def zoomsearch(self,sstr,limit=10,target='host'):
         sstr=urllib2.quote(sstr)
@@ -103,6 +107,13 @@ class zoomeye:
             zoomdevs=self.parsezoom4body(body)
             if flag or len(zoomdevs)<10 or ((len(deviceALL)+10)>=limit and limit>0):
                 deviceALL.extend(zoomdevs)
+                '''
+                if len(zoomdevs)==0:
+                    tp=BeautifulSoup(body)
+                    if tp.find('span',{'class':'text-muted'}):
+                        zoomeye.useragent=getuseragent()
+                        return self.getzoomsrs(surl,limit,flag)
+                '''
                 return deviceALL
             deviceALL.extend(zoomdevs)
             p+=1
@@ -144,7 +155,7 @@ class zoomeye:
     def parsedevice2dict(self,device):
         devdit={}
         try:
-            devdit['ip']=device.find('a',{"class":"ip"}).contents[0]
+            devdit['ip']=str(device.find('a',{"class":"ip"}).contents[0])
             devdit['app']=device.find('li',{"class":"app"}).a.contents[0].strip()
             devdit['country']=device.find('a',{"class":"country"}).contents[2].strip()
             devdit['city']=device.find('a',{"class":"city"}).contents[0].strip()
@@ -172,7 +183,7 @@ def zoom_search_print(paras):
     """zoomprint search_string"""
     init_zoom()
     if not paras:
-        paras="site:baidu.com"
+        paras="port:6379"
     devs=zoom.zoomsearch(paras,10)
     zoom.printdevinfo(devs)
     
@@ -183,6 +194,7 @@ def zoom_search_obj(paras):
         pd=lib_func.getparasdict(paras,"o:t:",['max='])
         if (not pd) or len(pd['args'])!=1:
             lib_func.printstr("You should input the vaild parameters",1)
+            lib_func.printstr(zoom_search_obj.__doc__)
             return
     except Exception:
         lib_func.printstr(zoom_search_obj.__doc__,1)
@@ -210,6 +222,8 @@ def zoomwork(devs,url,lock,threadvar):
     subdevs=threadvar['zoom'].getzoomsrs(url,0,1)
     lock.acquire()
     devs.extend(subdevs)
+    lib_func.printstr(url)
+    print len(devs),len(subdevs)    
     lock.release()
     
 def zoomsearch(key,limit,threads,target='host'):
@@ -220,15 +234,19 @@ def zoomsearch(key,limit,threads,target='host'):
         devs=[]
         sstr=urllib2.quote(key)
         nm=zoom.getzoomnumbers("https://www.zoomeye.org/search?q=%s&h=%s" %(sstr,target))
+        lib_func.printstr("Found result %d" %nm)
         if nm<=0:
             lib_func.printstr("This summary is emtry",1)
             return
         lock=lib_TheardPool2.getlock()
-        pool=lib_TheardPool2.threadpool(tmax=threads,start=False,debug=True)
+        pool=lib_TheardPool2.threadpool(tmax=threads,start=False)#,debug=True)
         pool.initsubthead(initsubthread,())
         ts=int(math.ceil(limit/10.0))
         total=int(math.ceil(nm/10.0))
-        ts=lib_func.getmin(ts,total)
+        if ts:
+            ts=lib_func.getmin(ts,total)
+        else:
+            ts=total
         for i in range(ts):
             surl="https://www.zoomeye.org/search?q=%s&h=%s&p=%d" %(sstr,target,i+1)
             pool.addtask(zoomwork,(devs,surl,lock))
