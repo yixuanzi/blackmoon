@@ -1,7 +1,7 @@
 #BLACKMOON
 #author:Gbuyi
 #email: yeying0311@126.com
-#version 1.6
+#version 1.7
 
 
 #一个开放式漏洞利用平台，支持动态加载插件
