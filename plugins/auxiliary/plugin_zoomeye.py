@@ -192,10 +192,6 @@ def zoom_search_obj(paras):
     init_zoom()
     try:
         pd=lib_func.getparasdict(paras,"o:t:",['max='])
-        if (not pd) or len(pd['args'])!=1:
-            lib_func.printstr("You should input the vaild parameters",1)
-            lib_func.printstr(zoom_search_obj.__doc__)
-            return
     except Exception:
         lib_func.printstr(zoom_search_obj.__doc__,1)
         return    

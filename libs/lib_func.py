@@ -91,3 +91,9 @@ def dumpobj(obj,path):
     except Exception:
         printstr("dump object to %s fail" %path,2)
         return None
+
+def isip(s):
+    import re
+    if re.match(r'^(\d{1,3}\.){3}\d{1,3}$',s):
+        return True
+    return False
