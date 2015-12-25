@@ -134,19 +134,24 @@ def gethttpresponse(hhead,hbody):
         return hbody
     
 
-def getpyurl(copt={},proxy=None):
+def getpyurl(copt={},proxy=None,ffx=None):
     obj=pycurl.Curl()
     obj.setopt(pycurl.SSL_VERIFYPEER, 0)     # https
     obj.setopt(pycurl.SSL_VERIFYHOST, 0)
+    if ffx:
+        ffxip=getrandomip(ffx)
     opts={pycurl.USERAGENT:"Mozilla/5.0 (Windows NT 6.1; WOW64; rv:42.0) Gecko/20100101 Firefox/42.0",\
           pycurl.HTTPHEADER:["Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",\
                              "Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3",\
                              "Accept-Encoding: gzip, deflate",\
                              "Connection: keep-alive"]
           }
+    
+    if ffx:
+        opts[pycurl.HTTPHEADER].append("X-Forwarded-For: %s" %ffxip)
+        
     for key,value in opts.iteritems():
         obj.setopt(key,value)
-    
     if obj:
         for key,value in copt.iteritems():
             obj.setopt(key,value)
@@ -154,3 +159,16 @@ def getpyurl(copt={},proxy=None):
         obj.setopt(pycurl.PROXY,proxy)
     
     return obj
+
+def getrandomip(flag='net'):
+    import random
+    if flag=='sgcc':
+        p1=10
+    else:
+        p1=random.randint(1,254)
+    p2=random.randint(1,254)
+    p3=random.randint(1,254)
+    p4=random.randint(1,254)
+    return "%d.%d.%d.%d" %(p1,p2,p3,p4)
+
+  

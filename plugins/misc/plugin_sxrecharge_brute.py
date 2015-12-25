@@ -6,6 +6,7 @@ import gzip
 import StringIO
 import re
 import urllib2
+import time
 from bmplugin import *
 
 info={'desc':"shu xiang recharge brute",
@@ -35,7 +36,7 @@ class booksgcc:
         else:
             self.passwd=self.main.pcf.getconfig('booksgcc','passwd')
         
-        self.objc=lib_http.getpyurl()#proxy="http://127.0.0.1:8088")
+        self.objc=lib_http.getpyurl(ffx='sgcc')#proxy="http://127.0.0.1:8088")
         self.falg=0
         
     def islogin(self):
@@ -120,6 +121,7 @@ class booksgcc:
 
 def sxrecharge_brute(paras):
     """sxrecbrute [--prefix=prefix] [--start=start] [--end=end] [-t threads] [-u username] [-p passwd]"""
+    st=time.time()
     try:
         pd=lib_func.getparasdict(paras,"t:u:p:",['prefix=','start=','end='])
     except Exception:
@@ -157,4 +159,4 @@ def sxrecharge_brute(paras):
     lib_func.printstr("Wait all thread finish...")
     for thread in threadlist:
         thread.join()
-    
+    lib_func.printstr("Pay %d sec for this task" %(int(time.time()-st)))
