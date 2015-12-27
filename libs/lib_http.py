@@ -4,13 +4,31 @@ import sys
 import StringIO
 import urllib2
 import lib_TheardPool2
+import lib_func
 import shutil
 import gzip
-
+import urlparse
 
 
 flock=lib_TheardPool2.getlock()
-  
+
+class bmdownload:
+    """blackmoon download class"""
+    def __init__(self,thread=1,bg=1,log=0):
+        self.thread=thread
+        self.bg=bg
+        self.log=log
+        
+    def download(self,address,savepath):
+        if address:
+            addr=address
+        else:
+            lib_func.printstr("You should input vaild urls",2)
+            return
+    
+    def getfileinfo(self,address):
+        pass
+    
 def downdata4info(downinfo,fhand,num,theadvars):
     objc=theadvars['objc']
     #objs=theadvars['objs']
@@ -70,26 +88,6 @@ def getdata4info(url,opts={},objc=None,objs=None,objh=None,timeout=5):
     return objh.getvalue(),objs.getvalue()
 
 
-def setsubthead(opts,obj):
-    if type(obj)==lib_TheardPool2.threadpool:
-        for i in range(len(obj.threads)):
-            obj.threads[i].theadvars['speed']=0
-            obj.threads[i].theadvars['objc']=pycurl.Curl()
-            for key,value in opts.iteritems():
-                obj.threads[i].theadvars['objc'].setopt(key,value)         
-                obj.threads[i].theadvars['objs']=StringIO.StringIO()
- 
-    else:
-        print "parameter error!!!"
-        exit(1)
-    
-def getspeed(obj):
-    speed=0
-    for thread in obj.threads:
-        speed+=thread.theadvars['speed']
-    print "Now download speed is %.2f kb/second" %speed 
-
-
 def download4info(downinfo,theads=5):
     if os.path.isfile(downinfo['savename']):
         fhand=open(downinfo['savename'],'wb+')
@@ -135,6 +133,7 @@ def gethttpresponse(hhead,hbody):
     
 
 def getpyurl(copt={},proxy=None,ffx=None):
+    """ffx can set 'sgcc' and other,mean set the ffx head to this type"""
     obj=pycurl.Curl()
     obj.setopt(pycurl.SSL_VERIFYPEER, 0)     # https
     obj.setopt(pycurl.SSL_VERIFYHOST, 0)
@@ -171,4 +170,26 @@ def getrandomip(flag='net'):
     p4=random.randint(1,254)
     return "%d.%d.%d.%d" %(p1,p2,p3,p4)
 
-  
+def getlinks4soup(soup,filter='link|.*',host=None):
+    lks=[]
+    import re
+    tags={'a':'href','img':'src','link':'src','javascript':'src'}
+    filter=filter.split('|')
+    for key,value in tags.iteritems():
+        links=soup.findAll(key)
+        for link in links:
+            lk=link[value].strip()
+            if host and lk[:4]=='http':
+                lk=host+lk
+            
+            if filter[0]=='link' and  re.search(filter[1],lk):
+                lks.append(lk)
+            elif filter[0]=='type':
+                inx=lk.rfind('.')
+                if inx and re.search(filter,lk[inx+1:]):
+                    lks.append(lk)
+    return lks
+
+def getdomain4url(urls):
+    up=urlparse.urlsplit(urls)
+    return "%s://%s" %(up.scheme,up.netloc)

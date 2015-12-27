@@ -98,5 +98,21 @@ def isip(s):
         return True
     return False
 
-      
     
+def setparas(pdict,ddict,args=0):
+    """use paraster dict and default paraster dict to set the runtime variter"""
+    for key in ddict.keys():
+        if pdict.has_key(key):
+            if pdict[key]:
+                ddict[key]=pdict[key]
+            else:
+                ddict[key]=1
+    
+    if args and pdict.has_key('args') and args==len(pdict['args']):
+        ddict['args']=pdict['args']
+        return True
+    elif args==0:
+        return True
+    else:
+        return False
+            
