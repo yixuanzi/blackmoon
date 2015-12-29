@@ -15,7 +15,6 @@ info={'desc':"bmwget for this frametework",
       'link':''} 
 
 def init_plugin(main): 
-    booksgcc.main=main
     active=main.maintive
     active.regcommand('bmwget',wgetaction,"get rec from http",__file__)
     

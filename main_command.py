@@ -31,7 +31,8 @@ class main_command:
                   'help':self.bmhelp,
                   'eval':self.bmeval,
                   'dump':self.dump,
-                  'load':self.load}
+                  'load':self.load,
+                  'reload':self.reload}
         main=self
         for cmd,func in funcdict.iteritems():
             self.maintive.regcommand(cmd,func,func.__doc__)
@@ -172,3 +173,17 @@ class main_command:
         obj=lib_func.loadobj(pd['args'][0])
         if obj:
             self.regobj(obj,objname)
+    
+    def reload(self,paras):
+        """reload module_name"""
+        try:
+            pd=lib_func.getparasdict(paras,"")
+        except Exception:
+            lib_func.pris(self.reload.__doc__)
+            return
+        ddict=dict()
+        if lib_func.setparas(pd,ddict,1):
+            pass
+        else:
+            lib_func.pris(self.reload.__doc__)
+            

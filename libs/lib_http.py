@@ -193,3 +193,6 @@ def getlinks4soup(soup,filter='link|.*',host=None):
 def getdomain4url(urls):
     up=urlparse.urlsplit(urls)
     return "%s://%s" %(up.scheme,up.netloc)
+
+def u28quote(string):
+    return urllib2.quote(string.encode('utf8'))

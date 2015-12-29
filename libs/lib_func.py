@@ -115,4 +115,20 @@ def setparas(pdict,ddict,args=0):
         return True
     else:
         return False
-            
+
+def gethome():
+    home=os.environ['HOMEPATH']
+    if sys.platform=='win32':
+        root=os.environ['SYSTEMROOT']
+        return os.path.split(root)[0][:2]+home
+    return home
+
+def tounicode(string):
+    try:
+        s=string.decode('gbk')
+    except UnicodeDecodeError:
+        s=string.decode('utf8')
+    return s
+
+def getcwd4file(string):
+    return os.path.split(string)[0]

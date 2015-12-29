@@ -1,5 +1,6 @@
 import sys
 import os
+import pycurl
 import lib_http
 import lib_func
 import lib_interactive
