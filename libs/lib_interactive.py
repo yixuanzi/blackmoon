@@ -12,10 +12,10 @@ class interactive:
         """my interactive for buyi"""
         self.__gvars=dict()
         self.__cmd=dict()
-        self.prefix=self.defaultprefix
+        self.prefix="$BlackMoon$Maintive>"
         self.share=None
-        self.defgroups=('builds')
-        
+        self.defgroups=('buildins',)
+        self.regcommand('help',self.tivehelp,self.tivehelp.__doc__)
     
     def setdefaultgroups(self,groups):
         self.defgroups=groups
@@ -56,9 +56,10 @@ class interactive:
 
         return 0
         
-    def defaultprefix(self):
-        return "$BlackMoon$Maintive>"
-    
+    def setdefaultprefix(self,prefix):
+        if prefix:
+            self.prefix=prefix
+            return prefix
 
     def getfunction(self,name,groups=None,tp=0):
         """0 function\t 1 desc message\t 2 help message"""
@@ -75,19 +76,49 @@ class interactive:
     def start(self):
         print self.welcome
         while 1:
-            cmds=raw_input(self.prefix())
+            cmds=raw_input(self.prefix)
             cmds=cmds.strip().split(' ',1)
             if cmds[0] in ('exit','quit'):
                 break
             func=self.getfunction(cmds[0])
             if len(cmds)>1 and type(func)!=str:
-                func(cmds[1].strip())
+                self.run(func,cmds[1].strip())
             elif len(cmds)==1 and type(func)!=str:
-                func("")
+                self.run(func,"")
             else:
                 lib_func.printstr("Not exist command in default groups!!!",2)
     
         lib_func.printstr("Interactive is finish")
+    
+    def run(self,func,paras=""):
+        try:
+            func(paras)
+        except Exception:
+            lib_func.printstr("have error in %s %s" %(func.__name__,paras),2)
+            
+    def tivehelp(self,paras):
+        """print help msg for you question"""
+        try:
+            pd=lib_func.getparasdict(paras,'v')
+            if not pd:
+                for group,dt in self.getcmddict().iteritems():
+                    lib_func.printstr(group,'####')
+                    for name,cmdmsg in dt.iteritems():
+                        print '*'+name,
+                    print ''
+                return
+            if pd.has_key('v'):
+                for group,dt in self.getcmddict().iteritems():
+                    lib_func.printstr(group,'####')
+                    for name,cmdmsg in dt.iteritems():
+                        lib_func.printstr("%s\t%s" %(name,cmdmsg[1]),'*')
+                return
+            if pd.has_key('args') and len(pd['args'])==1:
+                lib_func.printstr(self.getfunction(pd['args'][0],tp=2),'SRCFILE:')
+                lib_func.printstr(self.getfunction(pd['args'][0],tp=3),'HelpMSG:')
+        except Exception:
+            lib_func.printstr("You parameter vaild",2)
+           
 
 #i=interactive()
 #i.start()

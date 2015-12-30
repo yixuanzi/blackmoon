@@ -34,21 +34,25 @@ class bdcloud: #path must unicode
         self.opts={pycurl.USERAGENT:self.config['useragent'],pycurl.COOKIE:"BDUSS=%s" %self.config['token']}
         self.currentdir=u'/'
         self.tree={}
-        self.calltable={'ls':self.ls,\
-                        'pwd':self.pwd,\
-                        'put':self.put,\
-                        'get':self.get,\
-                        'cd':self.cd,\
-                        'del':self.delete,\
-                        'login':self.login,\
-                        'logout':self.logout}
-                        
-    
-    def login(self,username,password):
+        self.intertive=lib_interactive.interactive()
+        self.prefix=self.intertive.prefix[:-1]
+        self.calltable={'ls':self.ls,'pwd':self.pwd,'put':self.put,'get':self.get,\
+                        'cd':self.cd,'del':self.delete,'login':self.login,'logout':self.logout}
+        
+        for name,func in self.calltable.iteritems():
+            self.intertive.regcommand(name,func,func.__doc__)
+        self.changeprefix()
+        
+    def login(self,paras):
+        """ login username passwd"""
         pass
     
-    def logout(self):
+    def logout(self,paras):
+        """logout"""
         self.config={}
+        
+    def changeprefix(self):
+        self.intertive.setdefaultprefix("%s$%s>" %(self.prefix,self.currentdir))
         
     def putsecond(self,srcfile,dst=None):
         md5s=lib_func.getMD5(srcfile)
@@ -178,19 +182,19 @@ class bdcloud: #path must unicode
         end=time.time()
         print "TIME:%.2f s" %(end-start)
 
-    def help(self):
-        print "=================="
-        print "login"
-        print "logout"
-        print "ls [path]"
-        print "cd [path]"
-        print "del path"
-        print "pwd"
-        print "put src dst [threads]"
-        print "get src dst [threads]"
-        print "==================="
-        
-    def ls(self,path=None):
+    def ls(self,paras):
+        """ls [path]"""
+        ddict={}
+        try:
+            pd=lib_func.getparasdict(paras,"")
+        except Exception:
+            lib_func.printstr(self.ls.__doc__,1)
+            return
+        lib_func.setparas(pd,ddict)
+        if ddict.has_key('args'):
+            path=ddict['args'][0]
+        else:
+            path=None
         path=self.getrealpath(path)
         flist=self.getlist(path)
         if flist:
@@ -198,31 +202,43 @@ class bdcloud: #path must unicode
         else:
             print "Error: have not exist %s" %path
         
-    def pwd(self):
+    def pwd(self,paras):
         print self.currentdir
     
-    def cd(self,path=None):
+    def cd(self,paras):
+        """cd [path]"""
+        ddict={}
+        try:
+            pd=lib_func.getparasdict(paras,"")
+        except Exception:
+            lib_func.printstr(self.cd.__doc__,1)
+            return
+        lib_func.setparas(pd,ddict)
+        if ddict.has_key('args'):
+            path=ddict['args'][0]
+        else:
+            path=None
         path=self.getrealpath(path)
         if self.tree.has_key(path) or self.getlist(path):
             self.currentdir=path
+            self.changeprefix()
             return
         else:
             print "Error:%s is not exist" %path
     
     def get(self,args):
-        args=args.split(' ')
-        if len(args)<2:
-            print "Error: get src dst [threads]"
+        """get [-t thread] src dst"""
+        ddict={'t':1}
+        try:
+            pd=lib_func.getparasdict(paras,"t:")
+        except Exception:
+            lib_func.printstr(self.get.__doc__,1)
             return
-        src=args[0]
-        dst=args[1]
-        if not os.path.isdir(dst):
-            print "Error:dst diretory %s is not exist"
-            return
-        if len(args)==3:
-            threads=int(args[2])
-        else:
-            threads=0
+        lib_func.setparas(pd,ddict,2)
+        src=ddict['args'][0]
+        dst=ddict['args'][1]
+        threads=ddict['t']
+        
         src=self.getrealpath(src)
         if self.isdir(src):
             dst=dst+'/'+os.path.split(src)[1]
@@ -243,41 +259,35 @@ class bdcloud: #path must unicode
         pass
     
     def put(self,args):
-        args=args.split(' ')
-        if len(args)<1 and os.path.exists(args[0]):
-            print "Error: put src dst"
+        """put [-t thread] src dst"""
+        ddict={'t':1}
+        try:
+            pd=lib_func.getparasdict(paras,"t:")
+        except Exception:
+            lib_func.printstr(self.put.__doc__,1)
             return
-        if os.path.isfile(args[0]):
-            self.putfile(args[0],args[1])
+        lib_func.setparas(pd,ddict,2)
+        
+        if os.path.isfile(ddict['args'][0]):
+            self.putfile(ddict['args'][0],ddict['args'][1])
         else:
-            self.putdir(args[0],args[1])
+            self.putdir(ddict['args'][0],ddict['args'][1])
     
     def delete(self,path):
-        path=self.getrealpath(path)
-        self.delfile([path])   
+        """del path"""
+        ddict={}
+        try:
+            pd=lib_func.getparasdict(paras,"")
+        except Exception:
+            lib_func.printstr(self.delete.__doc__,1)
+            return
+        if lib_func.setparas(pd,ddict,1):
+            path=self.getrealpath(ddict['args'][0])
+            self.delfile([path])   
     
     def start(self):
-        while True:
-            line=raw_input(("Cloud@Baidu %s>" %self.currentdir).encode('gbk'))
-            line=line.strip()
-            line=lib_func.tounicode(line)
-            #print line
-            if line in ('exit','quit'):
-                exit(0)
-            elif line=='help':
-                self.help()
-            else:
-                cmd=line.split(' ',1)
-                if not self.calltable.has_key(cmd[0]):
-                    print "Error:have not supoort command"
-                    self.help()
-                    continue
-                if len(cmd)>1:
-                    self.calltable[cmd[0]](cmd[1])
-                else:
-                    self.calltable[cmd[0]]()
-                
-                    
+        self.intertive.start()
+                     
 def start(paras):            
     bdc=bdcloud()
     bdc.start()

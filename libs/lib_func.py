@@ -112,6 +112,8 @@ def setparas(pdict,ddict,args=0):
         ddict['args']=pdict['args']
         return True
     elif args==0:
+        if pdict.has_key('args'):
+            ddict['args']=pdict['args']
         return True
     else:
         return False
@@ -132,3 +134,19 @@ def tounicode(string):
 
 def getcwd4file(string):
     return os.path.split(string)[0]
+
+def compereversion(v1,v2,sp='.',seg=3):
+    v1s=v1.split(sp)
+    v2s=v2.split(sp)
+    try:
+        for i in range(seg):
+            vi1=int(v1s[i])
+            vi2=int(v2s[i])
+            if vi1>vi2:
+                return 1
+            elif vi1<vi2:
+                return 2
+        return 0
+    except Exception:
+        return -1
+    

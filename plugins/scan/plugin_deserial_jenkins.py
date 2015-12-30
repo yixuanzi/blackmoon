@@ -8,36 +8,50 @@ import re
 
 from bmplugin import *
 
-info={'desc':"This is a method searching vluns of the RCE.",
+info={'desc':"This is a method scan vluns with deserial jenkins",
       'cve':'',
-      #'init':0,  #0 maual init 1 init on start the program
+      'author':'wj',
       'link':"http://www.seclabx.com"} 
 
+mainobj=None
+
 def init_plugin(main):
+    global mainobj
+    mainobj=main
     active=main.maintive
-    active.regcommand('searchRCE',searchRCE_func)
-    #zoom=zoomeye()
-    #return "zoomeye",zoom
+    active.regcommand('jkds',scan_deserial_jenkinses,"scan unserial vulns with jenkins",__file__)
+
+        
     
-    
-    
-def searchRCE_func(testURL):
-    #print "Input the URL:"
-    #stringA=raw_input()
-    r=urllib2.urlopen(testURL)
+def scan_deserial_jenkins(testURL):
+    r=urllib2.urlopen(testURL+'/login',timeout=5)
     page=r.read()
-    #index=len(page)
-    
     soup=BeautifulSoup(page)
     lt=soup.find('a',{'href':'http://jenkins-ci.org/'})
     rfc=re.search('(\d+)\.(\d+)(\.\d)*',lt.contents[0])
     ver=rfc.group()
-    
-    if ver[:]!='1.625.2':
-        if (ver[0]>'1')or(ver[0]<'0'):
-            print "The version is wrong!"
-        else: 
-            lib_func.printstr("Warning:The URL\n %s" %testURL)
-            print "\nexist the vluns of RCE!"
+    if lib_func.compereversion('1.625.2',ver)==1:
+        return 1
     else:
-        print "The URL does not exist the vluns of RCE!"
+        return 0
+
+def scan_deserial_jenkinses(paras):
+    """jkds [-h host] [--object=objs]"""
+    try:
+        pd=lib_func.getparasdict(paras,"h:",['object='])
+    except Exception:
+        lib_func.printstr(scan_deserial_jenkins.__doc__,1)
+        return
+    ddict={'h':'','object':''}
+    lib_func.setparas(pd,ddict)
+    if ddict['h']:
+        if scan_deserial_jenkins(ddict['h']):
+            lib_func.printstr(ddict['h'],'Host:')
+    elif ddict['object']:
+        obj=mainobj.getobj(ddict['object'])
+        if obj and obj.__doc__[:4]=='dict':
+            for zl in obj:
+                if scan_deserial_jenkins(zl['address']):
+                    lib_func.printstr(ddict['h'],'Host:')
+            
+        
