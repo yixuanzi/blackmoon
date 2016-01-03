@@ -4,7 +4,7 @@ import ConfigParser
 from bmplugin import *
 
 main=None
-   
+
 class main_command:
     """blackMoon main class"""
     def __init__(self):

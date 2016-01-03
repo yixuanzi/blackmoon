@@ -149,4 +149,17 @@ def compereversion(v1,v2,sp='.',seg=3):
         return 0
     except Exception:
         return -1
-    
+
+def copylist(objlist,value=None):
+    obj=list()
+    obj.extend(objlist)
+    if value:
+        obj.append(value)
+    return obj
+
+def copydict(objdict,kv=None):
+    obj=dict()
+    obj.update(objdict)
+    if kv:
+        obj[kv[0]]=kv[1]
+    return obj

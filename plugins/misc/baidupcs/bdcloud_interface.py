@@ -32,6 +32,9 @@ class baidupcsi:
     def getinfolink(self,path):
         return "http://d.pcs.baidu.com/rest/2.0/pcs/file?app_id=250528&method=download&check_blue=1&ec=1&path="+lib_http.u28quote(path)
     
+    def getdownlink(self,path):
+            return "http://d.pcs.baidu.com/rest/2.0/pcs/file?app_id=250528&method=download&check_blue=1&ec=1&path="+lib_http.u28quote(path)    
+    
     def getlistlink(self,path):
         return "http://pan.baidu.com/api/list?dir="+lib_http.u28quote(path)+"&page=1&num=1000&clienttype=8"
     
