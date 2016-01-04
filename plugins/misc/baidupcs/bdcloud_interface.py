@@ -21,7 +21,6 @@ def setobjc(objc,opts):
 class baidupcsi:
     """"""
     #----------------------------------------------------------------------
-    __useragent="netdisk;5.3.4.5;PC;PC-Windows;6.2.9200;WindowsBaiduYunGuanJia"
     def getinitobj(self,token):
         opts={pycurl.USERAGENT:self.__useragent,pycurl.COOKIE:"BDUSS=%s" %token}
         objc=pycurl.Curl()
@@ -37,9 +36,6 @@ class baidupcsi:
     
     def getlistlink(self,path):
         return "http://pan.baidu.com/api/list?dir="+lib_http.u28quote(path)+"&page=1&num=1000&clienttype=8"
-    
-    def getuseragent(self):
-        return self.__useragent
     
     def getdelobj(self,flist):
         filelist="filelist="+str([lib_http.u28quote(f) for f in flist]).replace("'",'"')

@@ -17,7 +17,6 @@ def init_plugin(main):
     sys.path.append(lib_func.getcwd4file(__file__)+'\\baidupcs')
     active=main.maintive
     import bdcloud_manager
-    bdcloud_manager.bdcloud.token=main.pcf.getconfig('baidu','token')
     bdcloud_manager.bdcloud.main=main
     active.regcommand('bdpcs',bdcloud_manager.start,"baidu pcs for intertive",__file__)
     

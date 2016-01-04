@@ -93,8 +93,9 @@ class interactive:
     def run(self,func,paras=""):
         try:
             func(paras)
-        except Exception:
+        except Exception as e:
             lib_func.printstr("have error in %s %s" %(func.__name__,paras),2)
+            lib_func.printstr(str(e),"Exception:")
             
     def tivehelp(self,paras):
         """print help msg for you question"""

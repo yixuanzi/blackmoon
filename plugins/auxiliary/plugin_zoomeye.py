@@ -212,7 +212,7 @@ def zoom_search_obj(paras):
 def initsubthread(pool):
     if type(pool)==lib_TheardPool2.threadpool:
         for i in range(len(pool.threads)):
-            pool.threads[i].theadvars['zoom']=zoomeye()
+            pool.threads[i].threadvars['zoom']=zoomeye()
 
 def zoomwork(devs,url,lock,threadvar):
     subdevs=threadvar['zoom'].getzoomsrs(url,0,1)

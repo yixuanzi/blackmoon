@@ -31,7 +31,9 @@ class main_command:
         if not paras:
             lib_func.printlist(self.gdict['plugins'].keys(),1)
        
-    
+    def reloadconfig(self):
+        self.pcf=lib_config.bmconfig(CONFIG_PATH)
+        
     def search(self,paras):
         """search plugin for you key"""
         pass

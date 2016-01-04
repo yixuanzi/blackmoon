@@ -21,40 +21,64 @@ curlopts={pycurl.USERAGENT:"Mozilla/5.0 (Windows NT 6.1; WOW64; rv:42.0) Gecko/2
 
 class bmdownload:
     """blackmoon download class"""
-    def __init__(self,thread=1,log=1):
-        self.thread=thread
+    def __init__(self,log=1):
         self.log=log
         self.flock=lib_TheardPool2.getlock()
        
-    def download(self,address,savepath,savename="",opts={}):
+    def download(self,address,savepath,savename="",opts={},thread=1):
         if not address:
             lib_func.printstr("You should input vaild urls",2)
             return
         objc=self.initobjc(opts)
-        finfo=self.getfileinfo(objc,address)
+        try:
+            finfo=self.getfileinfo(objc,address)
+        except Exception as e:
+            lib_func.printstr(str(e),"DD:Get ddinfo faile:")
+            return
         opts=lib_func.copydict(opts,(pycurl.URL,finfo[0]))
+        
         if finfo[1]==0:
             lib_func.printstr("Have error in download",2)
             return
         block=self.getblock(finfo[1])
         fname=savepath+'/'+savename
         dlinfo={'url':finfo[0],'save':fname,'size':finfo[1],'block':block,'status':[0 for i in range(int(math.ceil(float(finfo[1])/block)))]}
-        
-        if os.path.isfile(dlinfo['save']+'.bmcache'):
-            f=None
-            pass
-        else:
-            f=open(dlinfo['save'],'wb')
-            f.seek(finfo[1]-3)
-            f.write('EOF')
-            f.flush()
-        pool=lib_TheardPool2.threadpool(self.thread,start=False)
+        self.printdd(dlinfo)
+        f=self.getfp(dlinfo['save'],dlinfo['size'])
+        pool=lib_TheardPool2.threadpool(thread,start=False)
         pool.initsubthead(self.initsub,(opts,))
         [pool.addtask(self.getbytes,(dlinfo,i,f))for i in range(len(dlinfo['status']))]
         pool.start()
-        pool.waitPoolComplete()
+        pool.waitPoolComplete(self.getspeed)
         f.close()
-            
+    
+    def getspeed(self,pool):
+        speed=0
+        for thread in pool.threads:
+            #print "%.2f kb/s" %(thread.threadvars['speed']/1024),
+            speed+=thread.threadvars['speed']
+        #print ''
+        if self.log:
+            lib_func.printstr("%.2f kb/s" %(speed/1024),"DD:Speed:")
+        else:
+            pass
+        
+    def getfp(self,savepath,size):
+        if os.path.isfile(savepath+'.bmcache'):
+            f=None
+            pass
+        else:
+            f=open(savepath,'wb')
+            f.seek(size-3)
+            f.write('EOF')
+            f.flush()
+        return f
+
+    def printdd(self,dlinfo):
+        lib_func.printstr(dlinfo['url'],"DD:URL:")
+        lib_func.printstr(dlinfo['save'],"DD:SAVE:")
+        lib_func.printstr(dlinfo['size'],"DD:SIZE:")
+        
     def initobjc(self,opts):
         objc=pycurl.Curl()
         for key,value in curlopts.iteritems():
@@ -63,17 +87,18 @@ class bmdownload:
             objc.setopt(key,value)
         objc.setopt(pycurl.SSL_VERIFYPEER, 0)
         objc.setopt(pycurl.SSL_VERIFYHOST, 0)
-        objc.setopt(pycurl.TIMEOUT,5)
+        #objc.setopt(pycurl.TIMEOUT,10)
         return objc
     
     def initsub(self,opts,pool):
         for thread in pool.threads:
-            thread.theadvars['objc']=self.initobjc(opts)
+            thread.threadvars['objc']=self.initobjc(opts)
+            thread.threadvars['speed']=0
     
     def write2file(self,objs,dlinfo,index,fp):
         self.flock.acquire()
         fp.seek(index*dlinfo['block'])
-        fp.write(objs.buflist[0])
+        fp.write(objs.getvalue())
         self.flock.release()
 
     def getbytes(self,dlinfo,index,fp,threadvar):
@@ -84,10 +109,12 @@ class bmdownload:
         for i in range(3):
             try:
                 objc.perform()
+                threadvar['speed']=objc.getinfo(pycurl.SPEED_DOWNLOAD)
                 self.write2file(objs,dlinfo,index,fp)
                 return
-            except Exception:
-                pass
+            except Exception as e:
+                lib_func.printstr(str(e),"DD:Exception:")
+
         lib_func.printstr("Time out ,can't download",2)
     
     def getblock(self,size):
@@ -97,10 +124,14 @@ class bmdownload:
             block=1024*10 #10KB
         elif size<=1024*1024:
             block=1024*100 #100KB
+        else:
+            block=1024*500 #500KB
+        '''
         elif size<=1024*1024*10:
             block=1024*1024 #1M
         else:
-            block=1024*1024*2 #2M
+            block=1024*1024*1 #2M
+        '''
         return block
  
     def getfileinfo(self,objc,url,follow=3):
@@ -256,9 +287,9 @@ def geteffectiveurl(objc,url,nums=3):
     
     
 """
-  def downdata4info(downinfo,fhand,num,theadvars):
-        objc=theadvars['objc']
-        #objs=theadvars['objs']
+  def downdata4info(downinfo,fhand,num,threadvars):
+        objc=threadvars['objc']
+        #objs=threadvars['objs']
         objc.setopt(objc.SSL_VERIFYPEER, 0)     # https
         objc.setopt(objc.SSL_VERIFYHOST, 0)    
         objc.setopt(pycurl.URL,downinfo['location'])
@@ -281,7 +312,7 @@ def geteffectiveurl(objc,url,nums=3):
         downinfo['status'][num]=1
         flock.release()
         objs.close()
-        theadvars['speed']=objc.getinfo(objc.SPEED_DOWNLOAD)/1024
+        threadvars['speed']=objc.getinfo(objc.SPEED_DOWNLOAD)/1024
         print "HTTP-code:", objc.getinfo(objc.HTTP_CODE) 
         print "Total-time:", objc.getinfo(objc.TOTAL_TIME)
         print "Download speed: %.2f bytes/second" % objc.getinfo(objc.SPEED_DOWNLOAD)

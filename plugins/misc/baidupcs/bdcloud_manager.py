@@ -12,11 +12,11 @@ from bmplugin import *
 
 
 class bdcloud: #path must unicode
-    token=""
     main=None
     pcsi=baidupcsi()
     def __init__(self,flag=None):
-        self.config={'token':bdcloud.token,'useragent':self.pcsi.getuseragent()}
+        bdcloud.main.reloadconfig()
+        self.config={'token':bdcloud.main.pcf.getconfig('baidu','token'),'useragent':bdcloud.main.pcf.getconfig('bdpcs','useragent')}
         self.opts={pycurl.USERAGENT:self.config['useragent'],pycurl.COOKIE:"BDUSS=%s" %self.config['token']}
         if flag=='debug':
             self.opts[pycurl.PROXY]="http://127.0.0.1:8088"
@@ -80,7 +80,7 @@ class bdcloud: #path must unicode
             pass
         else:
             daddr=self.pcsi.getdownlink(srcfile)
-            self.dd.download(daddr,ddir,fname,self.opts)
+            self.dd.download(daddr,ddir,fname,self.opts,threads)
         end=time.time()
         print "INFO: Download file %s succfulliy" %srcfile
         print "TIME:%.2f s" %(end-start)
@@ -159,6 +159,11 @@ class bdcloud: #path must unicode
             self.printlist(flist)
         else:
             print "Error: have not exist %s" %path
+    
+    def vaildtoken(self):
+        if self.getlist('/'):
+            return 0
+        return -1
         
     def pwd(self,paras):
         print self.currentdir
@@ -195,7 +200,7 @@ class bdcloud: #path must unicode
         lib_func.setparas(pd,ddict,2)
         src=ddict['args'][0]
         dst=ddict['args'][1]
-        threads=ddict['t']
+        threads=int(ddict['t'])
         
         src=self.getrealpath(src)
         if self.isdir(src):
@@ -248,4 +253,7 @@ class bdcloud: #path must unicode
                      
 def start(paras):
     bdc=bdcloud(flag=paras)
-    bdc.start()
+    if bdc.vaildtoken()==0:
+        bdc.start()
+    else:
+        lib_func.printstr("You must config vaild token for baidu pcs token in plugins.ini",1)
