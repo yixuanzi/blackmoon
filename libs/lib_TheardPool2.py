@@ -24,7 +24,7 @@ class taskclass(threading.Thread):
         self.waitime=waitime
         if name:
             self.setName(name)
-        self.theadvars={}
+        self.threadvars={}
         
     def run(self):
         while True:
@@ -33,7 +33,7 @@ class taskclass(threading.Thread):
                     break
                 func,args=self.queue.get(timeout=self.waitime)
                 args=list(args)
-                args.append(self.theadvars)
+                args.append(self.threadvars)
                 func(*args)
             else:
                 if self.debug:

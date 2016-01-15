@@ -192,10 +192,6 @@ def zoom_search_obj(paras):
     init_zoom()
     try:
         pd=lib_func.getparasdict(paras,"o:t:",['max='])
-        if (not pd) or len(pd['args'])!=1:
-            lib_func.printstr("You should input the vaild parameters",1)
-            lib_func.printstr(zoom_search_obj.__doc__)
-            return
     except Exception:
         lib_func.printstr(zoom_search_obj.__doc__,1)
         return    
@@ -216,7 +212,7 @@ def zoom_search_obj(paras):
 def initsubthread(pool):
     if type(pool)==lib_TheardPool2.threadpool:
         for i in range(len(pool.threads)):
-            pool.threads[i].theadvars['zoom']=zoomeye()
+            pool.threads[i].threadvars['zoom']=zoomeye()
 
 def zoomwork(devs,url,lock,threadvar):
     subdevs=threadvar['zoom'].getzoomsrs(url,0,1)

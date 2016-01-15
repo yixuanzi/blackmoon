@@ -5,16 +5,6 @@ from bmplugin import *
 
 main=None
 
-def getobj(name,space=None):
-    if space:
-        if main.gdict['objects'].has_key(space):
-            if main.gdict['objects'][space].has_key(name):
-                return main.gdict['objects'][space][name]
-    for space in main.gdict['objects']:
-        if main.gdict['objects'][space].has_key(name):
-            return main.gdict['objects'][space][name]
-    return None
-    
 class main_command:
     """blackMoon main class"""
     def __init__(self):
@@ -28,10 +18,10 @@ class main_command:
                   'search':self.search,
                   'varobj':self.listobj,
                   'clear':self.clear,
-                  'help':self.bmhelp,
                   'eval':self.bmeval,
                   'dump':self.dump,
-                  'load':self.load}
+                  'load':self.load,
+                  'reload':self.reload}
         main=self
         for cmd,func in funcdict.iteritems():
             self.maintive.regcommand(cmd,func,func.__doc__)
@@ -41,35 +31,13 @@ class main_command:
         if not paras:
             lib_func.printlist(self.gdict['plugins'].keys(),1)
        
-    
+    def reloadconfig(self):
+        self.pcf=lib_config.bmconfig(CONFIG_PATH)
+        
     def search(self,paras):
         """search plugin for you key"""
         pass
-    
-    def bmhelp(self,paras):
-        """print help msg for you question"""
-        try:
-            pd=lib_func.getparasdict(paras,'v')
-            if not pd:
-                for group,dt in self.maintive.getcmddict().iteritems():
-                    lib_func.printstr(group,'####')
-                    for name,cmdmsg in dt.iteritems():
-                        print '*'+name,
-                    print ''
-                return
-            if pd.has_key('v'):
-                for group,dt in self.maintive.getcmddict().iteritems():
-                    lib_func.printstr(group,'####')
-                    for name,cmdmsg in dt.iteritems():
-                        lib_func.printstr("%s\t%s" %(name,cmdmsg[1]),'*')
-                return
-            if pd.has_key('args') and len(pd['args'])==1:
-                lib_func.printstr(self.maintive.getfunction(pd['args'][0],tp=2),'SRCFILE:')
-                lib_func.printstr(self.maintive.getfunction(pd['args'][0],tp=3),'HelpMSG:')
-        except Exception:
-            lib_func.printstr("You parameter vaild",2)
-           
-        
+            
     def listobj(self,paras):
         """list objection in the space"""
         for space,dt in self.gdict['objects'].iteritems():
@@ -172,3 +140,28 @@ class main_command:
         obj=lib_func.loadobj(pd['args'][0])
         if obj:
             self.regobj(obj,objname)
+    
+    def reload(self,paras):
+        """reload module_name"""
+        try:
+            pd=lib_func.getparasdict(paras,"")
+        except Exception:
+            lib_func.pris(self.reload.__doc__)
+            return
+        ddict=dict()
+        if lib_func.setparas(pd,ddict,1):
+            pass
+        else:
+            lib_func.pris(self.reload.__doc__)
+            
+    def getobj(self,name,space=None):
+        if space:
+            if self.gdict['objects'].has_key(space):
+                if self.gdict['objects'][space].has_key(name):
+                    return self.gdict['objects'][space][name]
+        for space in self.gdict['objects']:
+            if self.gdict['objects'][space].has_key(name):
+                return self.gdict['objects'][space][name]
+        return None
+    
+            
