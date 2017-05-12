@@ -5,6 +5,7 @@
 
 
 #一个开放式漏洞利用平台，支持动态加载插件
+```
 	内置如下交互式命令
 	* load	load [-o objname] filename
 	* search	search plugin for you key
@@ -15,7 +16,7 @@
 	* eval	eval python_segment
 	* plugins	list loaded plugins
 	* example	this is example plugin
-
+```
 
 #插件样例
 	根据功能要求加载自身需要模块
